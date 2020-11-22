@@ -1,0 +1,773 @@
+---
+title: "Case Study 2 - Attrition"
+author: "Apurv Mittal"
+date: "11/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+# Load Libraries
+
+suppressMessages(library(tidyverse))
+suppressMessages(library(GGally))
+suppressMessages(library(correlation))
+suppressMessages(library(corrplot))
+suppressMessages(library(dplyr))
+suppressMessages(library(tidyverse))
+suppressMessages(library(lsr))
+suppressMessages(library(ggthemes))
+suppressMessages(library(class))
+suppressMessages(library(readxl))
+suppressMessages(library(plotly))
+suppressMessages(library(groupdata2))
+suppressMessages(library(ggcorrplot))
+suppressMessages(library(MASS))
+suppressMessages(library(caret))
+
+```
+
+
+# Introduction
+
+DDSAnalytics is an analytics company that specializes in talent management solutions for Fortune 100 companies. Talent management is defined as the iterative process of developing and retaining employees. The executive leadership has identified predicting employee turnover as its first application of data science for talent management. We have been tasked to conduct an analysis of existing employee data. 
+
+We evaluated the employee data, conducted in-depth analysis of various parameters provided to us. We came up with various factors which impacts the employee attrition and as well as factors which can help predict the attrition of an employee. We also  built a profile of an employee with high probability of leaving the company. 
+
+
+```{r}
+# Load the data files
+
+# This one is the original dataset
+originalData = read.csv("/Users/apurv/Documents/SMU/6306 - Doing Data Science/DS Project 2/CaseStudy2DDS/CaseStudy2-data.csv", header = TRUE)
+
+# This is competition dataset for Attrition
+test_Attrition<-read.csv("/Users/apurv/Documents/SMU/6306 - Doing Data Science/DS Project 2/CaseStudy2CompSet No Attrition.csv", header = TRUE)
+
+# This is competition dataset for Monthly Income 
+test_MI<- read_excel("/Users/apurv/Documents/SMU/6306 - Doing Data Science/DS Project 2/CaseStudy2CompSet No Salary.xlsx", col_names = TRUE)
+
+```
+
+## Exploratory Data Analysis
+
+First we will see a sample of our data to understand what kind of variables we are evaluating.
+
+```{r}
+head(originalData)
+```
+
+Our Data set has following variables and records.
+
+```{r}
+Total.Var = ncol(originalData)
+Total.Rows =nrow(originalData)
+
+print(paste("Number of variables:",Total.Var))
+print(paste("Number of Records:", Total.Rows))
+print(paste("List of Variables:", ""))
+
+colnames(originalData)
+
+```
+
+We have to clean up the data now to be able to use if for our analysis. First we will set the correct data type for the variables.
+
+```{r}
+# Convert the data variables to factors
+originalData$Attrition=as.factor(originalData$Attrition)
+originalData$BusinessTravel=as.factor(originalData$BusinessTravel)
+originalData$Department=as.factor(originalData$Department)
+originalData$Education=as.factor(originalData$Education)
+originalData$EducationField=as.factor(originalData$EducationField)
+originalData$EnvironmentSatisfaction=as.factor(originalData$EnvironmentSatisfaction)
+originalData$Gender=as.factor(originalData$Gender)
+originalData$JobInvolvement=as.factor(originalData$JobInvolvement)
+originalData$JobLevel=as.factor(originalData$JobLevel)
+originalData$JobRole=as.factor(originalData$JobRole)
+originalData$JobSatisfaction=as.factor(originalData$JobSatisfaction)
+originalData$MaritalStatus=as.factor(originalData$MaritalStatus)
+originalData$NumCompaniesWorked=as.factor(originalData$NumCompaniesWorked)
+originalData$OverTime=as.factor(originalData$OverTime)
+originalData$Over18=as.factor(originalData$Over18)
+originalData$RelationshipSatisfaction=as.factor(originalData$RelationshipSatisfaction)
+originalData$PerformanceRating=as.factor(originalData$PerformanceRating)
+originalData$StockOptionLevel=as.factor(originalData$StockOptionLevel)
+originalData$WorkLifeBalance=as.factor(originalData$WorkLifeBalance)
+
+```
+
+Lets first check the distribution of Monthly Income and distribution of Attrition as they are the data of Interest here.
+
+The Monthly Income looks right skewed. Which is expected of a Income data and its in line with our expectation.
+
+```{r}
+
+originalData %>% ggplot(aes(MonthlyIncome)) + geom_histogram(binwidth = 500,fill="steelblue") + theme_economist()
+
+```
+
+The Attrition data appears to be exteremly unbalanced. We have large number of "No's" compared to "Yes's". Which means the data analysis could suffer from bias. 
+
+```{r}
+
+# Original Attrition Data Distribution
+
+plot.Attrition  <-  originalData %>% group_by(Attrition) %>% tally() %>%
+  mutate(percentage=round(prop.table(n),2) * 100) %>%
+  ggplot(aes(x=Attrition, y=percentage)) + geom_bar(stat="identity",fill="steelblue") +
+  geom_text(aes(x=Attrition, y=1, label= sprintf("%.1f%%", percentage)), hjust=0.5, vjust=-2, size=5,colour="white") + labs(x="Employee Attrition",    y="Percentage", title="Employee Attrition Data Distribution") + theme_economist()
+
+plot.Attrition
+
+```
+
+Before we take any action to balance the data, lets evaluate little more.
+
+Lets check if Monthly Income and Age has any relationship with Attrition.
+
+```{r echo=FALSE}
+
+# Box Plots with Age and Monthly Income variables
+
+originalData%>%ggplot(aes(Age,MonthlyIncome, colour = Attrition))+ geom_point() + theme_economist() 
+
+
+```
+
+It looks like the "No" attrition is overwhelming compared to the acutal attrition.
+
+Let's check one more set of plots. Do we have a relationship between Attrition and the Job Level, Job Role, Job Involvement and Job Satisfaction?
+
+
+```{r echo=FALSE}
+
+# Job level and Attrition plot
+
+originalData%>%ggplot(aes(JobLevel, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+
+# Job Role and Attrition plot
+
+originalData%>%ggplot(aes(JobRole, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() + theme(axis.text.x = element_text(angle = 90, hjust = 0 ,vjust = 0.5, size = 6))
+
+# Job Involvement and Attrition plot
+
+originalData%>%ggplot(aes(JobInvolvement, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+
+# Job Satisfaction and Attrition plot
+
+originalData%>%ggplot(aes(JobSatisfaction, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+
+
+```
+
+Again its hard to tell if Job Level plays any role at in the Attrition. Because the "No" values are disproportionately higher.
+
+### Balancing the Data (Down Sample)
+
+To solve this problem, we will balance the data using Down Sample feature. Where data will be reduced to match the Attrition values of Yes and No.
+
+```{r}
+
+set.seed(12345)
+data.ds <- downsample(originalData, cat_col = "Attrition")
+#summary(data.ds)
+
+Total.Var.DS = ncol(data.ds)
+Total.Rows.DS = nrow(data.ds)
+
+print(paste("Number of variables:",Total.Var.DS))
+
+print(paste("Number of Records:", Total.Rows.DS))
+
+print(paste("List of Variables:", ""))
+
+colnames(data.ds)
+
+```
+
+Lets look at the Monthly Income and Age in relationship with Attrition again with balanced data.
+
+```{r echo=FALSE}
+
+# Box Plots with Age and Monthly Income variables
+
+data.ds%>%ggplot(aes(Age,MonthlyIncome, colour = Attrition))+ geom_point() + theme_economist() 
+
+
+```
+
+We can now see a more clear pattern where Lower Income and Yonger Age has clear relationhip to higher Attrition.
+
+Let's check the relationship between Attrition and the Job Level, Job Role, Job Involvement and Job Satisfaction again.
+
+
+```{r echo=FALSE}
+
+# Job level and Attrition plot
+
+data.ds%>%ggplot(aes(JobLevel, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+
+# Job Role and Attrition plot
+
+data.ds%>%ggplot(aes(JobRole, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() + theme(axis.text.x = element_text(angle = 90, hjust = 0 ,vjust = 0.5, size = 6))
+
+# Job Involvement and Attrition plot
+
+data.ds%>%ggplot(aes(JobInvolvement, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+
+# Job Satisfaction and Attrition plot
+
+data.ds%>%ggplot(aes(JobSatisfaction, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+
+
+```
+
+We can see that Job Level 1, Job Role of Laboratory Technician and Research Scientists, Lower Job Involvement and Lower Job Satisfation leads to higher Attrition rate.
+
+We will continue to do our data analysis using various parameters and plots to see if there is any relationship amoung the different variables with Monthly Income and Attrition.
+
+```{r}
+
+# Check if Distance From Home and the Employee Age plays a role towards Attrition
+
+data.ds%>%ggplot(aes(Age, DistanceFromHome,colour = Attrition))+ geom_point()+ theme_economist() 
+
+# Check if Stock Option (with and without Income) plays a role towards Attrition
+
+
+data.ds%>%ggplot(aes(StockOptionLevel, MonthlyIncome, colour = Attrition))+ geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))+theme_economist()
+
+
+data.ds%>%ggplot(aes(StockOptionLevel, fill = Attrition))+ geom_bar(position = "dodge")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))+theme_economist()
+
+
+# Check if Over Time (with and without Income) plays a role towards Attrition
+
+
+data.ds%>%ggplot(aes(OverTime, MonthlyIncome, colour = Attrition))+ geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+
+data.ds%>%ggplot(aes(OverTime, fill = Attrition))+ geom_bar(position = "dodge")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+
+# Check if Number of Companies Worked (with and without Income) plays a role towards Attrition
+
+
+data.ds%>%ggplot(aes(NumCompaniesWorked, MonthlyIncome, colour = Attrition))+ geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+
+data.ds%>%ggplot(aes(NumCompaniesWorked, fill = Attrition))+ geom_bar(position = "dodge")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+
+
+# Check if Marital Status (with and without Income) plays a role towards Attrition
+
+data.ds%>%ggplot(aes(MaritalStatus, MonthlyIncome, colour = Attrition))+ geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+
+data.ds%>%ggplot(aes(MaritalStatus, fill = Attrition))+ geom_bar(position = "dodge")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+
+
+# Check if Gender (with and without Income) plays a role towards Attrition
+
+data.ds%>%ggplot(aes(Gender, MonthlyIncome, colour = Attrition))+ geom_boxplot(position = "dodge")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+
+data.ds%>%ggplot(aes(Gender, fill = Attrition))+ geom_bar(position = "dodge")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+
+```
+
+From above plots we notice that Gender doesn't play a role in terms of Attrition or Income. However, Stock Option, Over Time are very important factor in Attrition. Marital status also appears to play a role in Attrition.
+
+```{r}
+# For the ease of analysis large number of variables, lets split them into smaller set of variables
+
+# Split data into multiple Factor variables
+
+
+Data.ds.Fact1 <- data.ds[,c(3,4,6,8,9,12,13)]
+
+Data.ds.Fact2 <- data.ds[,c(3,15,16,17,18,19)]
+
+Data.ds.Fact3 <- data.ds[,c(3,22,24,26,27,29,32)]
+
+# Split data into multiple Continous variables
+
+Data.ds.Cont1 <- data.ds[,c(2,3,5,7,14)]
+
+Data.ds.Cont2 <- data.ds[,c(3,20,21,25,30)]
+
+Data.ds.Cont3 <- data.ds[,c(3,31,33,34,35,36)]
+
+```
+
+
+### Heat Maps
+
+To further our analysis and validate the relationship of variables with each other. We will do heatmaps to check how variables are correlated to each other.
+
+```{r}
+# Correlation plots- Heatmaps
+
+# Correlation Plots of First set of Factors
+
+model.matrix(~0+., data=Data.ds.Fact1) %>%
+  cor() %>%
+  ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=2, insig = "blank")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 5.5), axis.text.y = element_text(hjust = 1,size = 6))
+
+
+
+# Correlation Plots of Second set of Factors
+
+model.matrix(~0+., data=Data.ds.Fact2) %>%
+  cor() %>%
+  ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=2, insig = "blank")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 5.5), axis.text.y = element_text(hjust = 1,size = 6))
+
+
+
+# Correlation Plots of Third set of Factors
+
+model.matrix(~0+., data=Data.ds.Fact3) %>%
+  cor() %>%
+  ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=2, insig = "blank")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 5.5), axis.text.y = element_text(hjust = 1,size = 6))
+
+
+# Correlation Plots of First set of Continuous Variables
+
+
+model.matrix(~0+., data=Data.ds.Cont1) %>%
+  cor() %>%
+  ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=3, insig = "blank")+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 3), axis.text.y = element_text(hjust = 1,size = 6))
+
+
+# Correlation Plots of Second set of Continuous Variables
+
+model.matrix(~0+., data=Data.ds.Cont2) %>%
+  cor() %>%
+  ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=3, insig = "blank")
+
+
+# Correlation Plots of Third set of Continuous Variables
+
+
+model.matrix(~0+., data=Data.ds.Cont3) %>%
+  cor() %>%
+  ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=3, insig = "blank")
+
+
+
+
+```
+
+### This analysis confirms our earlier assessment that Stock Option, Number of Years worked,Monthly Income, Over Time, Marital Status, Job Satisfaction, Job Role and Job Level plays a big role in the Attrition level.
+
+Based on Exploratory Data Analysis we can say that a typical profile of Employee who is likely to leave a company is follows:
+
+1. Marital Status = Single
+2. Stock Option Level = 0
+3. Monthly Income = <$10,000
+4. Number of Years worked = 4
+5. Over Time = Yes
+6. Job Satisfaction = 1 and 2 (Low)
+7. Job Role = Lab Technician and Research Scientist
+8. Number of Companies = 5 or greater
+9. Age = Below 40
+
+Surprisingly, following factors doesn't have a bearing on the high Attrition rate:
+
+1. Percentage Salary Hike
+2. Work Life Balance
+3. Gender
+
+
+## Statistical Analysis - Regression
+
+###Monthly Income
+
+After Exploratory Data Analysis, we will move on to Statistical Analysis of our Data. 
+
+First we will start with regression of Monthly Income.
+
+To start with, we will remove unwanted variables like: 
+1. ID - ID shouldn't matter
+2. Employee Count - All values are 1
+3. Employee Number - Employee number shouldn't matter
+4. Over 18 - All values are Yes
+5. Standard Hours - All values are 80
+
+Once we have the dataset, we will run stepwise regression to identify the significant variables
+
+```{r}
+
+# Reduce the data set by remove variable which are not required in this analysis
+
+data.red <- data.ds[,-c(1,10,11,23,28)]
+
+
+# Fit the full model
+full.model <- lm(MonthlyIncome ~., data = data.red)
+
+# Run Stepwise regression model
+step.model <- stepAIC(full.model, direction = "both",
+                      trace = FALSE)
+summary(step.model) # Identify the variables of significance
+
+set.seed(123)
+
+# Set up repeated k-fold cross-validation
+train.control <- trainControl(method = "cv", number = 10)
+
+# Train the model
+step.model <- train(MonthlyIncome ~., data = data.red,
+                    method = "leapBackward",
+                    tuneGrid = data.frame(nvmax = 1:15),
+                    trControl = train.control
+)
+step.model$results
+
+# step.model$bestTune # NV Max comes out to be 13. Which means 13 variables are required for the best model. It includes various levels of factor variables as well.
+
+#summary(step.model$finalModel) # This line is commented as its required only for exploration of the data model and not required for presentation.
+
+#coef(step.model$finalModel, 13) # This line is commented as its required only for exploration of the data model and not required for presentation.
+
+### FINAL Stepwise model for Monthly Income based on the significance identified by the stepwise regression model
+
+MI.Model<-lm(formula = MonthlyIncome ~ BusinessTravel + DistanceFromHome +
+      JobLevel + JobRole + TotalWorkingYears,data = data.red)
+
+summary(MI.Model)
+
+```
+
+Based on the regression analysis, we identify the following variables to have significant impact on the Monthly Income:
+
+1. Business Travel
+2. Distance From Home
+3. Job Level
+4. Job Role
+5. Total Working Years
+
+We will use these variables for our prediction.
+```{r}
+Income.EDA <-subset(data.ds, select = c("MonthlyIncome","BusinessTravel","DistanceFromHome", "JobLevel", "TotalWorkingYears"))
+
+pairs(Income.EDA)
+```
+
+Let's first validate the model for Monthly Income in terms of Error (Root Mean Square Error)
+
+```{r}
+
+#===Validate the MI Model ===#
+
+# First create a variable with only required fields
+MI.Variables <- subset(data.red, select = c("MonthlyIncome","BusinessTravel","DistanceFromHome","JobLevel", "JobRole",
+                                            "TotalWorkingYears"))
+
+set.seed(123)
+
+# Set split percentage to 70% for test and train data
+ 
+splitPerc = .70
+
+# Split the dataset into train and test
+trainIndices = sample(1:dim(MI.Variables)[1],round(splitPerc * dim(MI.Variables)[1]))
+train.MI.DF3 = MI.Variables[trainIndices,]
+test.MI.DF3 = MI.Variables[-trainIndices,]
+
+# Run Model on the train data set
+MI.Model.train<-lm(formula = MonthlyIncome ~ BusinessTravel + DistanceFromHome +
+                     JobLevel + JobRole + TotalWorkingYears,data = train.MI.DF3)
+
+# Predict on Test Data Set
+testset <- predict.lm(MI.Model.train,test.MI.DF3,se.fit = TRUE)
+
+# Validate the RMSE
+absolute.Error<- testset$fit - test.MI.DF3$MonthlyIncome
+
+rmse = sqrt(mean(absolute.Error^2))
+print(paste("Root Mean Square Error:", rmse))
+
+
+```
+
+### RMSE is good (less than $3,000), we can use this model to predict the competition set.
+
+```{r}
+
+#===FINAL Prediction model for Monthly Income ====#
+
+
+
+MI.Model<-lm(formula = MonthlyIncome ~ BusinessTravel + DistanceFromHome +
+               JobLevel + JobRole + TotalWorkingYears,data = data.red)
+
+
+# Competition data set - Fix the data type
+test_MI$BusinessTravel<-as.factor(test_MI$BusinessTravel)
+test_MI$JobLevel<-as.factor(test_MI$JobLevel)
+test_MI$JobRole<-as.factor(test_MI$JobRole)
+
+
+# Make predictions on the Competition data
+predictions.MI <- predict.lm(MI.Model, test_MI, se.fit = TRUE)
+#head(predictions.MI)
+
+#summary(predictions.MI$fit)
+#View(predictions.MI$fit)
+
+
+# Final Results for Monthly Income Prediction
+Predict.MI.Results = data.frame(ID = test_MI$ID, MonthlyIncome = predictions.MI$fit)
+
+write.csv(Predict.MI.Results, file = "Case2PredictionsApurv Salary.csv")
+
+```
+
+
+##Attrition
+
+Now, lets run the statistical Analysis for Attrition.
+
+We will use two different approaches for analysia and prediction of Attrition:
+
+1. Logistic regression - For analysis and Prediction
+2. K- Nearest Neighbours
+
+To start with, we will run Logistic Regression to identify the significant variables that contribute towards Attrition.
+
+###Logistic Regression
+
+```{r}
+
+#===LOGISTIC REGRESSION===#
+
+# First fit the model
+fit.att<-glm(formula = Attrition~., family = binomial(link = "logit"), data = data.red)
+summary(fit.att)
+```
+
+Based on the significant variables identified in initial run of Logistic Regression model. Make a subset of the variables from statistical analysis and EDA.
+
+Now, Let's validate the model.
+
+```{r}
+# Most important parameters from Logistic regression
+
+# data.red$DistanceFromHome
+# data.red$Education
+# data.red$EnvironmentSatisfaction
+# data.red$JobInvolvement
+# data.red$JobRole
+# data.red$JobSatisfaction
+# data.red$NumCompaniesWorked
+# data.red$OverTime
+# data.red$RelationshipSatisfaction
+# data.red$StockOptionLevel
+# data.red$YearsSinceLastPromotion
+# 
+# # Additional parameters of interest
+# data.red$BusinessTravel
+# data.red$Age
+# data.red$TotalWorkingYears
+# data.red$MonthlyIncome
+# data.red$YearsInCurrentRole
+# data.red$YearsWithCurrManager
+
+# Create a new variable with variables of interest
+
+Att.V.Int <- subset(data.red, select = c("DistanceFromHome","StockOptionLevel","YearsSinceLastPromotion", "RelationshipSatisfaction",
+                                         "Education","EnvironmentSatisfaction","JobSatisfaction","NumCompaniesWorked","OverTime",
+                                         "JobRole","JobInvolvement","MonthlyIncome","Attrition","Age", "BusinessTravel",
+                                         "TotalWorkingYears", "YearsInCurrentRole", "YearsWithCurrManager"))
+
+#===Validate the Attrition Model ===#
+
+#split Data
+set.seed(12345)
+splitPerc = .70
+
+# Split the dataset into train and test
+trainIndices = sample(1:dim(Att.V.Int)[1],round(splitPerc * dim(Att.V.Int)[1]))
+train.AT.LR = Att.V.Int[trainIndices,]
+test.AT.LR = Att.V.Int[-trainIndices,]
+
+
+fit.att.lg<-glm(formula = Attrition~., family = binomial(link = "logit"), data = train.AT.LR)
+#summary(fit.att.lg)
+
+
+Test.Result <- fit.att.lg %>% predict(test.AT.LR, type = "response")
+predicted.Results <- ifelse(Test.Result > 0.5, "Yes", "No")
+#predicted.Results
+
+results1 <-table(predicted.Results,test.AT.LR$Attrition)
+CM.LR<-confusionMatrix(results1)
+#CM.LR
+
+print(paste("Accuracy = ", CM.LR$overall[1]*100,"%"))
+print(paste("Sensitivity = ", CM.LR$byClass[1]*100,"%"))
+print(paste("Specificity = ", CM.LR$byClass[2]*100,"%"))
+```
+
+The Accuracy, Sensitivity and Specificity looks good. Now lets try and run KNN and check the prediction accuracy.
+
+##KNN
+
+In order to use categorical variables for KNN prediction, first we need to convert them into Integers. Once we have all numeric and integer variables, we will standardize (normalize) then for prediction. To remove the influence of a parameter being in larger scale.
+
+First we will identify the best value of K based on the Accuracy. By running 100 iterations.
+
+```{r}
+
+#===FINAL KNN MODEL FOR ATTRITION===#
+
+
+Attrition.Variables <- subset(data.red, select = c("Attrition","DistanceFromHome","YearsSinceLastPromotion","StockOptionLevel", "RelationshipSatisfaction","EnvironmentSatisfaction","JobSatisfaction","NumCompaniesWorked","OverTime" ,"JobRole","JobInvolvement"))
+
+# In-order to use the factors for KNN Prediction. Convert Factors to Integer
+
+Attrition.Variables$OverTime<-as.integer(Attrition.Variables$OverTime)
+Attrition.Variables$JobRole<-as.integer(Attrition.Variables$JobRole)
+Attrition.Variables$StockOptionLevel<- as.integer(Attrition.Variables$StockOptionLevel)
+Attrition.Variables$RelationshipSatisfaction<-as.integer(Attrition.Variables$RelationshipSatisfaction)
+Attrition.Variables$EnvironmentSatisfaction<-as.integer(Attrition.Variables$EnvironmentSatisfaction)
+Attrition.Variables$JobSatisfaction<-as.integer(Attrition.Variables$JobSatisfaction)
+Attrition.Variables$NumCompaniesWorked<-as.integer(Attrition.Variables$NumCompaniesWorked)
+Attrition.Variables$OverTime<-as.integer(Attrition.Variables$OverTime)
+Attrition.Variables$JobRole<-as.integer(Attrition.Variables$JobRole)
+Attrition.Variables$JobInvolvement<-as.integer(Attrition.Variables$JobInvolvement)
+
+# Normalize all the variables
+
+Att.DF3.N <- data.frame(DistanceFromHome = scale(Attrition.Variables$DistanceFromHome), YearsSinceLastPromotion = scale(Attrition.Variables$YearsSinceLastPromotion),StockOptionLevel=scale(Attrition.Variables$StockOptionLevel), RelationshipSatisfaction=scale(Attrition.Variables$RelationshipSatisfaction), EnvironmentSatisfaction = scale(Attrition.Variables$EnvironmentSatisfaction), JobSatisfaction = scale(Attrition.Variables$JobSatisfaction),NumCompaniesWorked = scale(Attrition.Variables$NumCompaniesWorked), OverTime = scale(Attrition.Variables$OverTime), JobRole = scale(Attrition.Variables$JobRole), JobInvolvement = scale(Attrition.Variables$JobInvolvement), Attrition = Attrition.Variables$Attrition)
+
+
+# Run 100 iterations  on different train/test sets. We will compute the average accuracy, specificity and Sensitivity.
+iterations = 100
+numks = 50
+
+masterAcc = matrix(nrow = iterations,ncol = numks)
+masterSensitivity = matrix(nrow = iterations,ncol = numks)
+masterSpecificity = matrix(nrow = iterations,ncol = numks)
+splitPerc = .7 #Training / Test split Percentage
+for(j in 1:iterations)
+{
+  splitPerc = .70
+  set.seed(12345)
+  trainIndices = sample(1:dim(Att.DF3.N)[1],round(splitPerc * dim(Att.DF3.N)[1]))
+  train.AT.DF3 = Att.DF3.N[trainIndices,]
+  test.AT.DF3 = Att.DF3.N[-trainIndices,]
+  for(i in 1:numks)
+  {
+  classifications = knn(train.AT.DF3[,c(1:10)], test.AT.DF3[,c(1:10)],train.AT.DF3$Attrition,prob=TRUE, k=i)
+  table(classifications,test.AT.DF3$Attrition)
+  CM = confusionMatrix(table(classifications,test.AT.DF3$Attrition))
+  masterAcc[j,i] = CM$overall[1]
+  masterSensitivity[j,i] = CM$byClass[1]
+  masterSpecificity[j,i] = CM$byClass[2]
+  }
+
+MeanAcc = colMeans(masterAcc)
+MeanSensitivity = colMeans(masterSensitivity)
+MeanSpecificity = colMeans(masterSpecificity)
+  masterAcc[j] = CM$overall[1]
+  masterSensitivity[j] = CM$byClass[1]
+  masterSpecificity[j] = CM$byClass[2]
+}
+  plot(seq(1,numks,1),MeanAcc, type = "l", main = "Plot of value of K vs. Accuracy", xlab = "Value of K", ylab="Accuracy %")
+
+  #which.max(MeanAcc)
+  #max(MeanSensitivity)
+  #max(MeanSpecificity)
+
+  # Best K is at 19 with 70.23% Accuracy, Sensitivity is 87.80% and Specificity is 60.46%
+
+MeanAcc = mean(colMeans(masterAcc))
+MeanSpecificity = mean(colMeans(masterSpecificity))
+MeanSensitivity = mean(colMeans(masterSensitivity))
+
+print(paste("Best Accuracy at K = ", which.max(MeanAcc), "of", max(MeanAcc)*100,"%"))
+
+print(paste("Mean Accuracy = ", MeanAcc*100,"%"))
+print(paste("Mean Sensitivity = ", MeanSensitivity*100,"%"))
+print(paste("Mean Specificity = ", MeanSpecificity*100,"%"))
+
+
+```
+
+Since iteration recommended K=19. We will run KNN for K=19. 
+
+
+```{r}
+
+# Run KNN Model for K=19
+classifications.K19 = knn(train.AT.DF3[,c(1:10)], test.AT.DF3[,c(1:10)],train.AT.DF3$Attrition,prob=TRUE, k=19)
+#table(classifications.K19,test.AT.DF3$Attrition)
+CM.K19 = confusionMatrix(table(classifications.K19,test.AT.DF3$Attrition))
+
+print(paste("Accuracy for K-19 = ", CM.K19$overall[1]*100,"%"))
+print(paste("Sensitivity for K-19 = ", CM.K19$byClass[1]*100,"%"))
+print(paste("Specificity for K-19 = ", CM.K19$byClass[2]*100,"%"))
+
+```
+
+For K=19, we got good Accuracy (above threshold of 60%). However, the Specificity is comparatively lower and marginally under 60%.
+
+
+Comparing the results from KNN and Logistic Regression. We decide to go ahead with Logistic Regression Model.
+
+
+```{r}
+#===FINAL Prediction model for Attrition on COMPETITION SET using LOGISTIC REGRESSION ====#
+
+fit.att1<-glm(formula = Attrition~., family = binomial(link = "logit"), data = Att.V.Int)
+#summary(fit.att1)
+
+# Identifying the variables of interest from the competition Data set.
+newdata <- subset(test_Attrition, select = c("DistanceFromHome","StockOptionLevel","YearsSinceLastPromotion", "RelationshipSatisfaction","Education",
+                                             "EnvironmentSatisfaction","JobSatisfaction","NumCompaniesWorked","OverTime" ,"JobRole","JobInvolvement",
+                                             "MonthlyIncome","Age", "BusinessTravel","TotalWorkingYears", "YearsInCurrentRole", "YearsWithCurrManager"))
+
+# Convert the competition (test) variables to proper data type
+newdata$BusinessTravel=as.factor(newdata$BusinessTravel)
+newdata$Education=as.factor(newdata$Education)
+newdata$EnvironmentSatisfaction=as.factor(newdata$EnvironmentSatisfaction)
+newdata$JobInvolvement=as.factor(newdata$JobInvolvement)
+newdata$JobRole=as.factor(newdata$JobRole)
+newdata$JobSatisfaction=as.factor(newdata$JobSatisfaction)
+newdata$NumCompaniesWorked=as.factor(newdata$NumCompaniesWorked)
+newdata$OverTime=as.factor(newdata$OverTime)
+newdata$RelationshipSatisfaction=as.factor(newdata$RelationshipSatisfaction)
+newdata$StockOptionLevel=as.factor(newdata$StockOptionLevel)
+
+# Final Predictive Model
+Final.Test <- fit.att1 %>% predict(newdata, type = "response")
+Final.predicted.Results <- ifelse(Final.Test > 0.5, "Yes", "No")
+
+#Final.predicted.Results
+
+# Final Results for Attrition Prediction for Logistic Regression combined with competition data set.
+Predict.Attrition.Results.LG = data.frame(ID = test_Attrition$ID, Attrition = Final.predicted.Results)
+
+write.csv(Predict.MI.Results, file = "Case2PredictionsApurv Attrition.csv")
+```
+
+
+##Results of Predictive Model using Logistic Regression are printed on the Case2PredictionsApurv Attrition.csv file.
+
+#### This concludes the analysis for this project.
+
