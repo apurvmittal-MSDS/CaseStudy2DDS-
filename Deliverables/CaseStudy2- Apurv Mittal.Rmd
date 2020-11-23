@@ -778,6 +778,7 @@ Final.predicted.Results <- ifelse(Final.Test > 0.5, "Yes", "No")
 Predict.Attrition.Results.LG = data.frame(ID = test_Attrition$ID, Attrition = Final.predicted.Results)
 
 write.csv(Predict.MI.Results, file = "Case2PredictionsApurv Attrition.csv")
+
 ```
 
 
