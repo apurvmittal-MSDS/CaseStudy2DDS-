@@ -34,9 +34,11 @@ suppressMessages(library(ggpubr))
 
 # Introduction
 
-DDSAnalytics is an analytics company that specializes in talent management solutions for Fortune 100 companies. Talent management is defined as the iterative process of developing and retaining employees. The executive leadership has identified predicting employee turnover as its first application of data science for talent management. We have been tasked to conduct an analysis of existing employee data. 
+DDSAnalytics is an analytic company that specializes in talent management solutions for Fortune 100 companies. Talent management is defined as the iterative process of developing and retaining employees. The executive leadership has identified predicting employee turnover as its first application of data science for talent management. We have been tasked to conduct an analysis of existing employee data. 
 
 We evaluated the employee data, conducted in-depth analysis of various parameters provided to us. We came up with various factors which impacts the employee attrition and as well as factors which can help predict the attrition of an employee. We also  built a profile of an employee with high probability of leaving the company. 
+
+### Link to the presentation on YouTube: https://youtu.be/PnB6vyu_7O8
 
 
 ```{r}
@@ -108,10 +110,10 @@ The Monthly Income looks right skewed. Which is expected of a Income data and it
 ```{r}
 
 originalData %>% ggplot(aes(MonthlyIncome)) + geom_histogram(binwidth = 500,fill="steelblue") + theme_economist()
-
+    
 ```
 
-The Attrition data appears to be exteremly unbalanced. We have large number of "No's" compared to "Yes's". Which means the data analysis could suffer from bias. 
+The Attrition data appears to be extremely unbalanced. We have large number of "No's" compared to "Yes's". Which means the data analysis could suffer from bias. 
 
 ```{r}
 
@@ -139,7 +141,7 @@ originalData%>%ggplot(aes(Age,MonthlyIncome, colour = Attrition))+ geom_point() 
 
 ```
 
-It looks like the "No" attrition is overwhelming compared to the acutal attrition.
+It looks like the "No" attrition is overwhelming compared to the actual attrition.
 
 Let's check one more set of plots. Do we have a relationship between Attrition and the Job Level, Job Role, Job Involvement and Job Satisfaction?
 
@@ -148,21 +150,22 @@ Let's check one more set of plots. Do we have a relationship between Attrition a
 
 # Job level and Attrition plot
 
-A = originalData%>%ggplot(aes(JobLevel, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+A = originalData%>%ggplot(aes(JobLevel, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() +theme(text = element_text(size = 8))
 
 # Job Role and Attrition plot
 
-B = originalData%>%ggplot(aes(JobRole, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() + theme(axis.text.x = element_text(angle = 90, hjust = 0 ,vjust = 0.5, size = 6))
+B = originalData%>%ggplot(aes(JobRole, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() + theme(axis.text.x = element_text(angle = 90, hjust = 0 ,vjust = 0.5, size = 6))+theme(text = element_text(size = 8))
 
 # Job Involvement and Attrition plot
 
-C = originalData%>%ggplot(aes(JobInvolvement, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+C = originalData%>%ggplot(aes(JobInvolvement, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() +theme(text = element_text(size = 8))
 
 # Job Satisfaction and Attrition plot
 
-D = originalData%>%ggplot(aes(JobSatisfaction, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+D = originalData%>%ggplot(aes(JobSatisfaction, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() +theme(text = element_text(size = 8))
 
-ggarrange(A,B,C,D,ncol=4,widths = c(1,1.5,1,1), common.legend = TRUE)
+ggarrange(A,C,D,B,ncol=2,nrow=2,widths = c(1,1,1,1), common.legend = TRUE)
+
 
 ```
 
@@ -202,7 +205,7 @@ data.ds%>%ggplot(aes(Age,MonthlyIncome, colour = Attrition))+ geom_point() + the
 
 ```
 
-We can now see a more clear pattern where Lower Income and Yonger Age has clear relationhip to higher Attrition.
+We can now see a more clear pattern where Lower Income and Younger Age has clear relationship to higher Attrition.
 
 Let's check the relationship between Attrition and the Job Level, Job Role, Job Involvement and Job Satisfaction again.
 
@@ -211,27 +214,26 @@ Let's check the relationship between Attrition and the Job Level, Job Role, Job 
 
 # Job level and Attrition plot
 
-A1=data.ds%>%ggplot(aes(JobLevel, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+A1=data.ds%>%ggplot(aes(JobLevel, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() +theme(text = element_text(size = 8))
 
 # Job Role and Attrition plot
 
-B1=data.ds%>%ggplot(aes(JobRole, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() + theme(axis.text.x = element_text(angle = 90, hjust = 0 ,vjust = 0.5, size = 6))
+B1=data.ds%>%ggplot(aes(JobRole, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() + theme(axis.text.x = element_text(angle = 90, hjust = 0 ,vjust = 0.5, size = 6))+ theme(text = element_text(size = 8))
 
 # Job Involvement and Attrition plot
 
-C1=data.ds%>%ggplot(aes(JobInvolvement, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+C1=data.ds%>%ggplot(aes(JobInvolvement, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist()+ theme(text = element_text(size = 8))
 
 # Job Satisfaction and Attrition plot
 
-D1=data.ds%>%ggplot(aes(JobSatisfaction, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() 
+D1=data.ds%>%ggplot(aes(JobSatisfaction, fill = Attrition))+ geom_bar(position = "dodge") + theme_economist() +theme(text = element_text(size = 8))
 
-ggarrange(A1,B1,C1,D1,ncol=4,widths = c(1,1.5,1,1), common.legend = TRUE)
-
+ggarrange(A1,C1,D1,B1,ncol=2,nrow=2,widths = c(1,1,1,1), common.legend = TRUE)
 ```
 
-We can see that Job Level 1, Job Role of Laboratory Technician and Research Scientists, Lower Job Involvement and Lower Job Satisfation leads to higher Attrition rate.
+We can see that Job Level 1, Job Role of Laboratory Technician and Research Scientists, Lower Job Involvement and Lower Job Satisfaction leads to higher Attrition rate.
 
-We will continue to do our data analysis using various parameters and plots to see if there is any relationship amoung the different variables with Monthly Income and Attrition.
+We will continue to do our data analysis using various parameters and plots to see if there is any relationship among the different variables with Monthly Income and Attrition.
 
 ```{r}
 
@@ -259,10 +261,10 @@ ggarrange(S1,S2,ncol=2,widths = c(1,1), common.legend = TRUE)
 
 
 O1 = data.ds%>%ggplot(aes(OverTime, MonthlyIncome, colour = Attrition))+ geom_boxplot()+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))+theme_economist()
 
 O2 = data.ds%>%ggplot(aes(OverTime, fill = Attrition))+ geom_bar(position = "dodge")+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))+theme_economist()
 
 ggarrange(O1,O2,ncol=2,widths = c(1,1), common.legend = TRUE)
 
@@ -270,30 +272,30 @@ ggarrange(O1,O2,ncol=2,widths = c(1,1), common.legend = TRUE)
 
 
 N1 = data.ds%>%ggplot(aes(NumCompaniesWorked, MonthlyIncome, colour = Attrition))+ geom_boxplot()+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))+theme_economist()
 
 N2 = data.ds%>%ggplot(aes(NumCompaniesWorked, fill = Attrition))+ geom_bar(position = "dodge")+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))+theme_economist()
 
 ggarrange(N1,N2,ncol=2,widths = c(1,1), common.legend = TRUE)
 
 # Check if Marital Status (with and without Income) plays a role towards Attrition
 
-M1 = data.ds%>%ggplot(aes(MaritalStatus, MonthlyIncome, colour = Attrition))+ geom_boxplot()+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+M1 = data.ds%>%ggplot(aes(MaritalStatus, MonthlyIncome, colour = Attrition))+ geom_boxplot()+theme_economist()+
+  theme(axis.text.x = element_text(angle = 0, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
 
-M2 = data.ds%>%ggplot(aes(MaritalStatus, fill = Attrition))+ geom_bar(position = "dodge")+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+M2 = data.ds%>%ggplot(aes(MaritalStatus, fill = Attrition))+ geom_bar(position = "dodge")+theme_economist()+
+  theme(axis.text.x = element_text(angle = 0, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
 
 ggarrange(M1,M2,ncol=2,widths = c(1,1), common.legend = TRUE)
 
 # Check if Gender (with and without Income) plays a role towards Attrition
 
-G1 = data.ds%>%ggplot(aes(Gender, MonthlyIncome, colour = Attrition))+ geom_boxplot(position = "dodge")+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+G1 = data.ds%>%ggplot(aes(Gender, MonthlyIncome, colour = Attrition))+ geom_boxplot(position = "dodge")+theme_economist()+
+  theme(axis.text.x = element_text(angle = 0, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
 
-G2 = data.ds%>%ggplot(aes(Gender, fill = Attrition))+ geom_bar(position = "dodge")+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
+G2 = data.ds%>%ggplot(aes(Gender, fill = Attrition))+ geom_bar(position = "dodge")+theme_economist()+
+  theme(axis.text.x = element_text(angle = 0, hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 6))
 
 ggarrange(G1,G2,ncol=2,widths = c(1,1), common.legend = TRUE)
 ```
@@ -325,7 +327,7 @@ Data.ds.Cont3 <- data.ds[,c(3,31,33,34,35,36)]
 
 #### Heat Maps
 
-To further our analysis and validate the relationship of variables with each other. We will do heatmaps to check how variables are correlated to each other.
+To further our analysis and validate the relationship of variables with each other. We will do heat-maps to check how variables are correlated to each other.
 
 ```{r}
 # Correlation plots- Heatmaps
@@ -335,7 +337,7 @@ To further our analysis and validate the relationship of variables with each oth
 model.matrix(~0+., data=Data.ds.Fact1) %>%
   cor() %>%
   ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=2, insig = "blank")+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 5.5), axis.text.y = element_text(hjust = 1,size = 6))
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 6), axis.text.y = element_text(hjust = 1,size = 6))
 
 
 
@@ -344,7 +346,7 @@ model.matrix(~0+., data=Data.ds.Fact1) %>%
 model.matrix(~0+., data=Data.ds.Fact2) %>%
   cor() %>%
   ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=2, insig = "blank")+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 5.5), axis.text.y = element_text(hjust = 1,size = 6))
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 6), axis.text.y = element_text(hjust = 1,size = 6))
 
 
 
@@ -353,7 +355,7 @@ model.matrix(~0+., data=Data.ds.Fact2) %>%
 model.matrix(~0+., data=Data.ds.Fact3) %>%
   cor() %>%
   ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=2, insig = "blank")+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 5.5), axis.text.y = element_text(hjust = 1,size = 6))
+  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 6), axis.text.y = element_text(hjust = 1,size = 6))
 
 
 # Correlation Plots of First set of Continuous Variables
@@ -361,8 +363,7 @@ model.matrix(~0+., data=Data.ds.Fact3) %>%
 
 model.matrix(~0+., data=Data.ds.Cont1) %>%
   cor() %>%
-  ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=3, insig = "blank")+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1,size = 3), axis.text.y = element_text(hjust = 1,size = 6))
+  ggcorrplot(show.diag = F, type="upper", lab=TRUE, lab_size=3, insig = "blank") 
 
 
 # Correlation Plots of Second set of Continuous Variables
@@ -386,7 +387,7 @@ model.matrix(~0+., data=Data.ds.Cont3) %>%
 
 ###### This analysis confirms our earlier assessment that Stock Option, Number of Years worked,Monthly Income, Over Time, Marital Status, Job Satisfaction, Job Role and Job Level plays a big role in the Attrition level.
 
-Based on Exploratory Data Analysis we can say that a typical profile of Employee who is likely to leave a company is follows:
+Based on Exploratory Data Analysis we can say that a typical profile of Employee who is likely to leave a company is as follows:
 
 1. Marital Status = Single
 2. Stock Option Level = 0
@@ -401,7 +402,7 @@ Based on Exploratory Data Analysis we can say that a typical profile of Employee
 Surprisingly, following factors doesn't have a bearing on the high Attrition rate:
 
 1. Percentage Salary Hike
-2. Work Life Balance
+2. Performance Ratings
 3. Gender
 
 
@@ -420,7 +421,7 @@ To start with, we will remove unwanted variables like:
 4. Over 18 - All values are Yes
 5. Standard Hours - All values are 80
 
-Once we have the dataset, we will run stepwise regression to identify the significant variables
+Once we have the data set, we will run step-wise regression to identify the significant variables
 
 ```{r}
 
@@ -463,6 +464,11 @@ MI.Model<-lm(formula = MonthlyIncome ~ BusinessTravel + DistanceFromHome +
 
 summary(MI.Model)
 
+x=varImp(full.model, scale=TRUE)
+ggplot(x,aes(x=reorder(rownames(x),Overall), y=Overall))+
+geom_point(color="blue", size=2, alpha=0.6)+geom_segment(aes(x=rownames(x),xend=rownames(x),y=0,yend=Overall),color="skyblue")+xlab("Variables")+ylab("Overall Importance")+theme_economist()+ coord_flip()+
+  theme(axis.text.x = element_text(hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 4))
+
 ```
 
 Based on the regression analysis, we identify the following variables to have significant impact on the Monthly Income:
@@ -477,7 +483,7 @@ We will use these variables for our prediction.
 ```{r}
 Income.EDA <-subset(data.ds, select = c("MonthlyIncome","BusinessTravel","DistanceFromHome", "JobLevel", "TotalWorkingYears"))
 
-pairs(Income.EDA)
+plot(Income.EDA)
 
 ```
 
@@ -488,8 +494,7 @@ Let's first validate the model for Monthly Income in terms of Error (Root Mean S
 #===Validate the MI Model ===#
 
 # First create a variable with only required fields
-MI.Variables <- subset(data.red, select = c("MonthlyIncome","BusinessTravel","DistanceFromHome","JobLevel", "JobRole",
-                                            "TotalWorkingYears"))
+MI.Variables <- subset(data.red, select = c("MonthlyIncome","BusinessTravel","DistanceFromHome","JobLevel", "JobRole","TotalWorkingYears"))
 
 set.seed(123)
 
@@ -552,14 +557,14 @@ write.csv(Predict.MI.Results, file = "Case2PredictionsApurv Salary.csv")
 ```
 
 
-###Attrition
+### Attrition
 
 Now, lets run the statistical Analysis for Attrition.
 
-We will use two different approaches for analysia and prediction of Attrition:
+We will use two different approaches for analysis and prediction of Attrition:
 
 1. Logistic regression - For analysis and Prediction
-2. K- Nearest Neighbours
+2. K- Nearest Neighbors
 
 To start with, we will run Logistic Regression to identify the significant variables that contribute towards Attrition.
 
@@ -572,6 +577,12 @@ To start with, we will run Logistic Regression to identify the significant varia
 # First fit the model
 fit.att<-glm(formula = Attrition~., family = binomial(link = "logit"), data = data.red)
 summary(fit.att)
+
+x=varImp(fit.att, scale=TRUE)
+ggplot(x,aes(x=reorder(rownames(x),Overall), y=Overall))+
+geom_point(color="blue", size=2, alpha=0.6)+geom_segment(aes(x=rownames(x),xend=rownames(x),y=0,yend=Overall),color="skyblue")+xlab("Variables")+ylab("Overall Importance")+theme_economist()+ coord_flip()+
+  theme(axis.text.x = element_text(hjust = 1,size = 8), axis.text.y = element_text(hjust = 1,size = 5))
+
 ```
 
 Based on the significant variables identified in initial run of Logistic Regression model. Make a subset of the variables from statistical analysis and EDA.
@@ -782,7 +793,15 @@ write.csv(Predict.MI.Results, file = "Case2PredictionsApurv Attrition.csv")
 ```
 
 
-### Results of Predictive Model using Logistic Regression are printed on the Case2PredictionsApurv Attrition.csv file.
+##### Results of Predictive Model using Logistic Regression are printed on the Case2PredictionsApurv Attrition.csv file.
+
+From our analysis. We can say that Employees with following are likely to stay longer with company :
+
+1. Good Stock Option plan
+2. Higher Job Satisfaction
+3. Work+Life Balance 
+
+
 
 ##### This concludes the analysis for this project.
 
