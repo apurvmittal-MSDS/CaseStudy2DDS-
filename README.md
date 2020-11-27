@@ -14,7 +14,7 @@ Data -> Data folder has the raw datasets.
 Deliverables -> Deliverables folder has the .RMD file, Presentation (Keynote format) and the Knit(HTML) file.
 
 
-## Videos links  
+## Video link  
 
 Apurv Mittal - https://youtu.be/PnB6vyu_7O8
 
